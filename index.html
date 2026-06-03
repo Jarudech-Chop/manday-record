@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Manday Record</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+      color: #1f2937;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      margin: auto;
+      background: #ffffff;
+      padding: 24px;
+      border-radius: 14px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    h1 {
+      margin: 0 0 24px 0;
+      padding: 16px;
+      text-align: center;
+      color: #ffffff;
+      background: #2563eb;
+      border-radius: 12px;
+      font-size: 26px;
+    }
+
+    .section {
+      margin-bottom: 28px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1e40af;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #dbeafe;
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .type-export-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .type-box {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .export-box {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .box-title {
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      color: #1f2937;
+    }
+
+    .export-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 14px;
+      align-items: end;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    input {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #ffffff;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+
+    .type-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .type-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .type-option input {
+      width: auto;
+      accent-color: #2563eb;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 11px 18px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #ffffff;
+      background: #2563eb;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .cancel-btn {
+      background: #64748b;
+      display: none;
+    }
+
+    .export-btn {
+      background: #16a34a;
+    }
+
+    .edit-btn {
+      background: #f59e0b;
+      padding: 7px 12px;
+      font-size: 12px;
+    }
+
+    .delete-btn {
+      background: #dc2626;
+      padding: 7px 12px;
+      font-size: 12px;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 800px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      font-size: 14px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    .manday {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .traveling {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .empty-message {
+      text-align: center;
+      color: #64748b;
+      padding: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .form-grid,
+      .type-export-grid,
+      .export-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+
+      .container {
+        padding: 16px;
+        border-radius: 12px;
+      }
+
+      h1 {
+        font-size: 22px;
+        padding: 14px;
+      }
+
+      .card {
+        padding: 14px;
+      }
+
+      .section-title {
+        font-size: 16px;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .button-row {
+        flex-direction: column;
+      }
+
+      .type-options {
+        flex-direction: column;
+      }
+
+      .type-option {
+        width: 100%;
+      }
+
+      table {
+        min-width: 760px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Manday Record</h1>
+
+    <div class="section">
+      <div class="section-title">Add / Edit Record</div>
+
+      <div class="card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="engineerName">Engineer Name</label>
+            <input type="text" id="engineerName" placeholder="เช่น Somchai" />
+          </div>
+
+          <div class="form-group">
+            <label for="projectName">Project Name</label>
+            <input type="text" id="projectName" placeholder="เช่น PICO Power Supply Replacement" />
+          </div>
+
+          <div class="form-group">
+            <label for="workDate">Date</label>
+            <input type="date" id="workDate" />
+          </div>
+        </div>
+
+        <div class="type-export-grid">
+          <div class="type-box">
+            <div class="box-title">Type</div>
+
+            <div class="type-options">
+              <label class="type-option">
+                <input type="checkbox" id="manday" value="Manday" />
+                Manday
+              </label>
+
+              <label class="type-option">
+                <input type="checkbox" id="traveling" value="Traveling" />
+                Traveling
+              </label>
+            </div>
+          </div>
+
+          <div class="export-box">
+            <div class="box-title">Export Record</div>
+
+            <div class="export-grid">
+              <div class="form-group">
+                <label for="exportStartDate">Start Date</label>
+                <input type="date" id="exportStartDate" />
+              </div>
+
+              <div class="form-group">
+                <label for="exportEndDate">End Date</label>
+                <input type="date" id="exportEndDate" />
+              </div>
+
+              <button class="export-btn" onclick="exportRecord()">Export CSV</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="saveButton" onclick="saveSchedule()">Add Record</button>
+          <button id="cancelButton" class="cancel-btn" onclick="cancelEdit()">Cancel Edit</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Record List</div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Engineer Name</th>
+              <th>Project Name</th>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Recorded Time</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody id="scheduleTable">
+            <tr>
+              <td colspan="7" class="empty-message">ยังไม่มีข้อมูล</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let schedules = [];
+    let editIndex = null;
+
+    function saveSchedule() {
+      const engineerName = document.getElementById("engineerName").value.trim();
+      const projectName = document.getElementById("projectName").value.trim();
+      const workDate = document.getElementById("workDate").value;
+
+      const selectedTypes = [];
+
+      if (document.getElementById("manday").checked) {
+        selectedTypes.push("Manday");
+      }
+
+      if (document.getElementById("traveling").checked) {
+        selectedTypes.push("Traveling");
+      }
+
+      if (!engineerName || !projectName || !workDate || selectedTypes.length === 0) {
+        alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+        return;
+      }
+
+      const currentTime = new Date().toLocaleString("th-TH", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+
+      const schedule = {
+        engineerName: engineerName,
+        projectName: projectName,
+        workDate: workDate,
+        types: selectedTypes,
+        recordedTime: currentTime
+      };
+
+      if (editIndex === null) {
+        schedules.push(schedule);
+      } else {
+        schedules[editIndex] = schedule;
+        editIndex = null;
+
+        document.getElementById("saveButton").innerText = "Add Record";
+        document.getElementById("cancelButton").style.display = "none";
+      }
+
+      renderTable();
+      clearForm();
+    }
+
+    function renderTable() {
+      const tableBody = document.getElementById("scheduleTable");
+      tableBody.innerHTML = "";
+
+      if (schedules.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty-message">ยังไม่มีข้อมูล</td>
+          </tr>
+        `;
+        return;
+      }
+
+      schedules.forEach((item, index) => {
+        const typeBadges = item.types.map(type => {
+          const badgeClass = type === "Manday" ? "manday" : "traveling";
+          return `<span class="badge ${badgeClass}">${type}</span>`;
+        }).join("");
+
+        const row = `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHtml(item.engineerName)}</td>
+            <td>${escapeHtml(item.projectName)}</td>
+            <td>${item.workDate}</td>
+            <td>${typeBadges}</td>
+            <td>${item.recordedTime}</td>
+            <td>
+              <button class="edit-btn" onclick="editSchedule(${index})">Edit</button>
+              <button class="delete-btn" onclick="deleteSchedule(${index})">Delete</button>
+            </td>
+          </tr>
+        `;
+
+        tableBody.innerHTML += row;
+      });
+    }
+
+    function editSchedule(index) {
+      const item = schedules[index];
+
+      document.getElementById("engineerName").value = item.engineerName;
+      document.getElementById("projectName").value = item.projectName;
+      document.getElementById("workDate").value = item.workDate;
+
+      document.getElementById("manday").checked = item.types.includes("Manday");
+      document.getElementById("traveling").checked = item.types.includes("Traveling");
+
+      editIndex = index;
+
+      document.getElementById("saveButton").innerText = "Update Record";
+      document.getElementById("cancelButton").style.display = "inline-block";
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+
+    function deleteSchedule(index) {
+      if (confirm("ต้องการลบรายการนี้ใช่ไหม?")) {
+        schedules.splice(index, 1);
+        renderTable();
+
+        if (editIndex === index) {
+          cancelEdit();
+        }
+      }
+    }
+
+    function cancelEdit() {
+      editIndex = null;
+      clearForm();
+
+      document.getElementById("saveButton").innerText = "Add Record";
+      document.getElementById("cancelButton").style.display = "none";
+    }
+
+    function clearForm() {
+      document.getElementById("engineerName").value = "";
+      document.getElementById("projectName").value = "";
+      document.getElementById("workDate").value = "";
+      document.getElementById("manday").checked = false;
+      document.getElementById("traveling").checked = false;
+    }
+
+    function exportRecord() {
+      const startDate = document.getElementById("exportStartDate").value;
+      const endDate = document.getElementById("exportEndDate").value;
+
+      if (!startDate || !endDate) {
+        alert("กรุณาระบุ Start Date และ End Date สำหรับ Export");
+        return;
+      }
+
+      if (startDate > endDate) {
+        alert("Start Date ต้องไม่มากกว่า End Date");
+        return;
+      }
+
+      const filteredRecords = schedules.filter(item => {
+        return item.workDate >= startDate && item.workDate <= endDate;
+      });
+
+      if (filteredRecords.length === 0) {
+        alert("ไม่พบข้อมูลในช่วงวันที่ที่เลือก");
+        return;
+      }
+
+      let csvContent = "\uFEFF";
+      csvContent += "No.,Engineer Name,Project Name,Date,Type,Recorded Time\n";
+
+      filteredRecords.forEach((item, index) => {
+        const row = [
+          index + 1,
+          escapeCsv(item.engineerName),
+          escapeCsv(item.projectName),
+          item.workDate,
+          escapeCsv(item.types.join(" / ")),
+          escapeCsv(item.recordedTime)
+        ];
+
+        csvContent += row.join(",") + "\n";
+      });
+
+      const fileName = `manday-record-${startDate}-to-${endDate}.csv`;
+
+      const blob = new Blob([csvContent], {
+        type: "text/csv;charset=utf-8;"
+      });
+
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+
+      link.setAttribute("href", url);
+      link.setAttribute("download", fileName);
+      link.style.display = "none";
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeCsv(value) {
+      if (value === null || value === undefined) {
+        return "";
+      }
+
+      const stringValue = String(value);
+
+      if (
+        stringValue.includes(",") ||
+        stringValue.includes('"') ||
+        stringValue.includes("\n")
+      ) {
+        return '"' + stringValue.replace(/"/g, '""') + '"';
+      }
+
+      return stringValue;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
