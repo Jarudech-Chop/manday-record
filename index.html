@@ -73,13 +73,7 @@
       align-items: stretch;
     }
 
-    .type-box {
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 16px;
-    }
-
+    .type-box,
     .export-box {
       background: #ffffff;
       border: 1px solid #e5e7eb;
@@ -174,6 +168,11 @@
       opacity: 0.9;
     }
 
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     .cancel-btn {
       background: #64748b;
       display: none;
@@ -187,12 +186,20 @@
       background: #f59e0b;
       padding: 7px 12px;
       font-size: 12px;
+      margin-right: 4px;
+      margin-bottom: 4px;
     }
 
     .delete-btn {
       background: #dc2626;
       padding: 7px 12px;
       font-size: 12px;
+    }
+
+    .status-message {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #475569;
     }
 
     .table-wrapper {
@@ -377,6 +384,8 @@
           <button id="saveButton" onclick="saveSchedule()">Add Record</button>
           <button id="cancelButton" class="cancel-btn" onclick="cancelEdit()">Cancel Edit</button>
         </div>
+
+        <div id="statusMessage" class="status-message"></div>
       </div>
     </div>
 
@@ -399,7 +408,7 @@
 
           <tbody id="scheduleTable">
             <tr>
-              <td colspan="7" class="empty-message">ยังไม่มีข้อมูล</td>
+              <td colspan="7" class="empty-message">Loading data...</td>
             </tr>
           </tbody>
         </table>
@@ -407,11 +416,81 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      updateDoc,
+      deleteDoc,
+      doc,
+      query,
+      orderBy,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfHgobXDmzGD6bZAeSRS4vAnCnoXU3KYE",
+      authDomain: "manday-record.firebaseapp.com",
+      projectId: "manday-record",
+      storageBucket: "manday-record.firebasestorage.app",
+      messagingSenderId: "744520485540",
+      appId: "1:744520485540:web:0d61d6990605d7f9c07431",
+      measurementId: "G-STX6J19QPP"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const collectionName = "mandayRecords";
+
     let schedules = [];
     let editIndex = null;
+    let editDocId = null;
 
-    function saveSchedule() {
+    async function loadRecords() {
+      setStatus("Loading records...");
+
+      const tableBody = document.getElementById("scheduleTable");
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="7" class="empty-message">Loading data...</td>
+        </tr>
+      `;
+
+      try {
+        const q = query(
+          collection(db, collectionName),
+          orderBy("workDate", "asc")
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        schedules = [];
+
+        querySnapshot.forEach((document) => {
+          schedules.push({
+            id: document.id,
+            ...document.data()
+          });
+        });
+
+        renderTable();
+        setStatus("Data loaded successfully.");
+      } catch (error) {
+        console.error("Load records error:", error);
+        setStatus("Error loading data. Please check Firestore Database and Security Rules.");
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty-message">Cannot load data from Firebase</td>
+          </tr>
+        `;
+      }
+    }
+
+    async function saveSchedule() {
       const engineerName = document.getElementById("engineerName").value.trim();
       const projectName = document.getElementById("projectName").value.trim();
       const workDate = document.getElementById("workDate").value;
@@ -431,6 +510,9 @@
         return;
       }
 
+      const saveButton = document.getElementById("saveButton");
+      saveButton.disabled = true;
+
       const currentTime = new Date().toLocaleString("th-TH", {
         year: "numeric",
         month: "2-digit",
@@ -440,26 +522,34 @@
         second: "2-digit"
       });
 
-      const schedule = {
+      const recordData = {
         engineerName: engineerName,
         projectName: projectName,
         workDate: workDate,
         types: selectedTypes,
-        recordedTime: currentTime
+        recordedTime: currentTime,
+        updatedAt: serverTimestamp()
       };
 
-      if (editIndex === null) {
-        schedules.push(schedule);
-      } else {
-        schedules[editIndex] = schedule;
-        editIndex = null;
+      try {
+        if (editDocId === null) {
+          recordData.createdAt = serverTimestamp();
+          await addDoc(collection(db, collectionName), recordData);
+          setStatus("Record added successfully.");
+        } else {
+          await updateDoc(doc(db, collectionName, editDocId), recordData);
+          setStatus("Record updated successfully.");
+        }
 
-        document.getElementById("saveButton").innerText = "Add Record";
-        document.getElementById("cancelButton").style.display = "none";
+        cancelEdit();
+        await loadRecords();
+      } catch (error) {
+        console.error("Save record error:", error);
+        alert("ไม่สามารถบันทึกข้อมูลได้ กรุณาตรวจสอบ Firebase / Firestore Rules");
+        setStatus("Error saving record.");
+      } finally {
+        saveButton.disabled = false;
       }
-
-      renderTable();
-      clearForm();
     }
 
     function renderTable() {
@@ -476,19 +566,21 @@
       }
 
       schedules.forEach((item, index) => {
-        const typeBadges = item.types.map(type => {
-          const badgeClass = type === "Manday" ? "manday" : "traveling";
-          return `<span class="badge ${badgeClass}">${type}</span>`;
-        }).join("");
+        const typeBadges = Array.isArray(item.types)
+          ? item.types.map(type => {
+              const badgeClass = type === "Manday" ? "manday" : "traveling";
+              return `<span class="badge ${badgeClass}">${escapeHtml(type)}</span>`;
+            }).join("")
+          : "";
 
         const row = `
           <tr>
             <td>${index + 1}</td>
-            <td>${escapeHtml(item.engineerName)}</td>
-            <td>${escapeHtml(item.projectName)}</td>
-            <td>${item.workDate}</td>
+            <td>${escapeHtml(item.engineerName || "")}</td>
+            <td>${escapeHtml(item.projectName || "")}</td>
+            <td>${escapeHtml(item.workDate || "")}</td>
             <td>${typeBadges}</td>
-            <td>${item.recordedTime}</td>
+            <td>${escapeHtml(item.recordedTime || "")}</td>
             <td>
               <button class="edit-btn" onclick="editSchedule(${index})">Edit</button>
               <button class="delete-btn" onclick="deleteSchedule(${index})">Delete</button>
@@ -503,14 +595,17 @@
     function editSchedule(index) {
       const item = schedules[index];
 
-      document.getElementById("engineerName").value = item.engineerName;
-      document.getElementById("projectName").value = item.projectName;
-      document.getElementById("workDate").value = item.workDate;
+      document.getElementById("engineerName").value = item.engineerName || "";
+      document.getElementById("projectName").value = item.projectName || "";
+      document.getElementById("workDate").value = item.workDate || "";
 
-      document.getElementById("manday").checked = item.types.includes("Manday");
-      document.getElementById("traveling").checked = item.types.includes("Traveling");
+      const types = Array.isArray(item.types) ? item.types : [];
+
+      document.getElementById("manday").checked = types.includes("Manday");
+      document.getElementById("traveling").checked = types.includes("Traveling");
 
       editIndex = index;
+      editDocId = item.id;
 
       document.getElementById("saveButton").innerText = "Update Record";
       document.getElementById("cancelButton").style.display = "inline-block";
@@ -521,19 +616,37 @@
       });
     }
 
-    function deleteSchedule(index) {
-      if (confirm("ต้องการลบรายการนี้ใช่ไหม?")) {
-        schedules.splice(index, 1);
-        renderTable();
+    async function deleteSchedule(index) {
+      const item = schedules[index];
 
-        if (editIndex === index) {
+      if (!item || !item.id) {
+        alert("ไม่พบ Record ID");
+        return;
+      }
+
+      if (!confirm("ต้องการลบรายการนี้ใช่ไหม?")) {
+        return;
+      }
+
+      try {
+        await deleteDoc(doc(db, collectionName, item.id));
+        setStatus("Record deleted successfully.");
+
+        if (editDocId === item.id) {
           cancelEdit();
         }
+
+        await loadRecords();
+      } catch (error) {
+        console.error("Delete record error:", error);
+        alert("ไม่สามารถลบข้อมูลได้ กรุณาตรวจสอบ Firebase / Firestore Rules");
+        setStatus("Error deleting record.");
       }
     }
 
     function cancelEdit() {
       editIndex = null;
+      editDocId = null;
       clearForm();
 
       document.getElementById("saveButton").innerText = "Add Record";
@@ -580,7 +693,7 @@
           escapeCsv(item.engineerName),
           escapeCsv(item.projectName),
           item.workDate,
-          escapeCsv(item.types.join(" / ")),
+          escapeCsv(Array.isArray(item.types) ? item.types.join(" / ") : ""),
           escapeCsv(item.recordedTime)
         ];
 
@@ -633,6 +746,18 @@
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     }
+
+    function setStatus(message) {
+      document.getElementById("statusMessage").innerText = message;
+    }
+
+    window.saveSchedule = saveSchedule;
+    window.editSchedule = editSchedule;
+    window.deleteSchedule = deleteSchedule;
+    window.cancelEdit = cancelEdit;
+    window.exportRecord = exportRecord;
+
+    loadRecords();
   </script>
 </body>
 </html>
